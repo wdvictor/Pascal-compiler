@@ -1,4 +1,6 @@
-import re
+import LexicalAnalyzer
+import SyntaxTree
+
 # import sys
 #
 # try:
@@ -10,40 +12,6 @@ import re
 #
 # code = file.read()
 
-keywords = ['program', 'label', 'type', 'array', 'of', 'var', 'procedure'
-                    ,'function', 'begin', 'end', 'if', 'then', 'else', 'while', 'do'
-                    , 'or', 'and', 'div', 'not']
-
-
-symbols = ['.', ';', ',', '(', ')', ':', '=',
-           '<', '>', '+', '-', '*', '[', ':=', '..']
-
-
-class SyntaxTree(object):
-
-    def add_child(self, node):
-        #assert if the node argument it's a SyntaxTree object
-        assert isinstance(node, SyntaxTree)
-        self.children.append(node)
-
-    def __init__(self, name='root', children=None):
-        self.name = name
-        self.children = []
-        if children is not None:
-            for child in children:
-                self.add_child(child)
-
-
-##function to read the notes in the tree
-# def check(object):
-#     print(object.name)
-#     if len(object.children) != 0:
-#         for i in range(len(object.children)):
-#             check(object.children[i])
-#     else:
-#         pass
-#
-
 
 code = '''
 program exemplo5 (input, output);
@@ -54,44 +22,11 @@ var n, k      : integer;
 code1 = '''
 program exemplo5(input, output,);
 '''
-tokens = []
-
-label = ''
-for str in code1:
-    if str in symbols:
-        if label in keywords:
-            tokens.append('<' + label + '>')
-            tokens.append('<' + str + '>')
-            label = ''
-        else:
-            if label is not '': tokens.append('#' + label + '#')
-            tokens.append('<' + str + '>')
-            label = ''
-    elif str is ' ' or str is'\t' or str is '\n':
-        if label in keywords:
-            if label is not '' : tokens.append('<' + label + '>')
-            label = ''
-        else:
-            if label is not '':
-                tokens.append('#' + label + '#')
-            label = ''
-    else:
-        label += str
 
 
-#print(tokens)
+tokens = LexicalAnalyzer.get_tokens(code)
 
-
-program = SyntaxTree('root', [
-    SyntaxTree('<program>'),
-    SyntaxTree('<id>'),
-    SyntaxTree('<(>'),
-    SyntaxTree('<lid>'),
-    SyntaxTree('<)>'),
-    SyntaxTree('<;>'),
-    SyntaxTree('<bloco>', [])
-])
-
+program = SyntaxTree.program
 
 identifiers = []
 
