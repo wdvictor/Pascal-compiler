@@ -1,18 +1,19 @@
-import sys
+
+# import sys
 #
 # try:
 #     file = open(sys.argv[1] , 'r')
 # except:
 #     print('File not found')
 #     exit(1)
+#
+# code = file.read()
 
-
-code = '''
-     INPP
+code = '''INPP
      AMEM 2
      AMEM 3
      DSVS R00
-R00: NADA
+R00: NADA 
      LEIT
      ARMZ 0, 0
      CRCT 0
@@ -21,7 +22,7 @@ R00: NADA
      ARMZ 0, 3
      CRCT 1
      ARMZ 0, 1
-R01: NADA
+R01: NADA 
      CRVL 0, 1
      CRVL 0, 0
      CMEG
@@ -39,25 +40,50 @@ R01: NADA
      SOMA
      ARMZ 0, 1
      DSVS R01
-R02: NADA
+R02: NADA 
      CRVL 0, 0
      IMPR
      CRVL 0, 2
      IMPR
      DMEM 5
-     PARA
-'''
+     PARA'''
 
+functions = []
+
+label = ''
+for i in code:
+    if i == ' ':
+        if label == '':
+            pass
+        else:
+            label += i
+    elif i == '\n':
+        functions.append(label)
+        label = ''
+    else:
+        label += i
+
+
+mepa = []
+
+
+
+
+for i in functions:
+   mepa.append(i.split(' '))
+
+
+#print(mepa)
 
 
 
 M = []
 D = []
 s = 0
+i = ''
 
 
-
-def INPP(D):
+def INPP():
     D.append(0)
     global s
     s = -1
@@ -128,7 +154,78 @@ def CMIG():
 
     s = s-1
 
+def CMDG():
+    global s
+    if M[s-1] != M[s]:
+        M[s] = 1
+    else:
+        M[s] = 0
 
+    s = s-1
+
+def CMAG():
+    global s
+    if M[s-1] >= M[s]:
+        M[s] = 1
+    else:
+        M[s] = 0
+
+    s = s -1
+
+def CMEG():
+    global s
+    if M[s-1] <= M[s]:
+        M[s] = 1
+    else:
+        M[s] = 0
+
+    s = s-1
+
+
+def DSVF(p):
+    global s, i
+    if M[s] == 0:
+        i = p
+    else:
+        i = next(i)
+
+    s = s+1
+
+
+def DSVS(p):
+    global i
+    i = p
+
+def NADA():
+    pass
+
+
+def AMEM(n):
+    global s
+    s = s+n
+
+
+def DMEM(n):
+    global s
+    s = s-n
+
+
+def CRVL(m, n):
+    global s
+    s = s+1
+    M[s] = M[D[m] + n]
+
+
+def ARMZ(m, n):
+    global s
+    M[D[m] + n] = M[s]
+    s = s - 1
+
+
+def LEIT():
+    global s
+    s = s + 1
+    M[s] = input()
 
 
 def IMPR():
@@ -137,11 +234,21 @@ def IMPR():
     s = s - 1
 
 
+functions = {'INPP': INPP, 'CRCT': CRCT, 'AMEM': AMEM, 'SOMA': SOMA, 'MULT': MULT,
+             'DIV': DIV, 'INVR': INVR, 'NEGA': NEGA, 'CONJ': CONJ, 'DISJ': DISJ,
+             'CMME': CMME, 'CMIG': CMIG, 'CMDG': CMDG, 'CMAG': CMAG, 'CMEG': CMEG,
+             'DSVF': DSVF, 'DSVS': DSVS, 'NADA': NADA, 'DMEM': DMEM, 'CRVL': CRVL,
+             'ARMZ': ARMZ, 'LEIT': LEIT, 'IMPR': IMPR
+             }
 
 
-# INPP CRCT SOMA MULT SUBT DIVI INVR NEGA CONJ DISJ CMME CMMA CMIG
-# CMDG CMAG CMEG DSVF DSVS NADA AMEM DMEM CRVL ARMZ IMPR LEIT
+def get_func(arg):
+    return functions.get(arg[0])
 
+
+# func = get_func(mepa[1]) AMEM
+# func(2)
+# print(s) 2
 
 
 
