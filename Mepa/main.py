@@ -1,4 +1,4 @@
-
+#
 # import sys
 #
 # try:
@@ -8,8 +8,10 @@
 #     exit(1)
 #
 # code = file.read()
+#
 
-code = '''INPP
+#An example of mepa code. Using to avoid loading archive every time
+code ='''INPP
      AMEM 2
      AMEM 3
      DSVS R00
@@ -46,10 +48,11 @@ R02: NADA
      CRVL 0, 2
      IMPR
      DMEM 5
-     PARA'''
+     PARA
+
+'''
 
 functions = []
-
 label = ''
 for i in code:
     if i == ' ':
@@ -60,27 +63,27 @@ for i in code:
     elif i == '\n':
         functions.append(label)
         label = ''
+    elif i == ',':
+        pass
     else:
         label += i
 
 
 mepa = []
-
-
-
-
 for i in functions:
-   mepa.append(i.split(' '))
-
-
-#print(mepa)
-
-
+    mepa.append(i.split(' '))
 
 M = []
 D = []
 s = 0
-i = ''
+k = '' # k is the actual function to execute
+
+initial_stack_memory = 1024
+index = 0
+
+while index <= initial_stack_memory:
+    index += 1
+    M.append(-1)
 
 
 def INPP():
@@ -90,8 +93,8 @@ def INPP():
 
 def CRCT(k):
     global s
-    s = s + 1
-    M.append(k)
+    s += 1
+    M[s] = int(k)
 
 def SOMA():
     global s
@@ -127,6 +130,7 @@ def CONJ():
 
     s = s-1
 
+
 def DISJ():
     global s
     if M[s-1] == 1 or M[s] == 1:
@@ -135,6 +139,7 @@ def DISJ():
         M[s] = 0
 
     s = s-1
+
 
 def CMME():
     global s
@@ -145,6 +150,7 @@ def CMME():
 
     s = s-1
 
+
 def CMIG():
     global s
     if M[s-1] == M[s]:
@@ -153,6 +159,7 @@ def CMIG():
         M[s-1] = 0
 
     s = s-1
+
 
 def CMDG():
     global s
@@ -163,6 +170,7 @@ def CMDG():
 
     s = s-1
 
+
 def CMAG():
     global s
     if M[s-1] >= M[s]:
@@ -171,6 +179,7 @@ def CMAG():
         M[s] = 0
 
     s = s -1
+
 
 def CMEG():
     global s
@@ -183,18 +192,21 @@ def CMEG():
 
 
 def DSVF(p):
-    global s, i
+    global s
     if M[s] == 0:
-        i = p
-    else:
-        i = next(i)
-
+        if mepa[index][0] == p + ':':
+            return iter(mepa[index: len(mepa)])
+        else:
+            return False
     s = s+1
 
 
 def DSVS(p):
-    global i
-    i = p
+    for index in range(len(mepa)):
+        if mepa[index][0] == p+':':
+            return iter(mepa[index: len(mepa)])
+
+
 
 def NADA():
     pass
@@ -202,24 +214,25 @@ def NADA():
 
 def AMEM(n):
     global s
-    s = s+n
+    #put '-2' to say that area is reserved
+    s = s+int(n)
 
 
 def DMEM(n):
     global s
-    s = s-n
+    s = s-int(n)
 
 
 def CRVL(m, n):
     global s
     s = s+1
-    M[s] = M[D[m] + n]
+    M[s] = M[D[int(m)] + int(n)]
 
 
 def ARMZ(m, n):
     global s
-    M[D[m] + n] = M[s]
-    s = s - 1
+    M[D[int(m)] + int(n)] = M[s]
+    s -= 1
 
 
 def LEIT():
@@ -233,7 +246,6 @@ def IMPR():
     print(M[s])
     s = s - 1
 
-
 functions = {'INPP': INPP, 'CRCT': CRCT, 'AMEM': AMEM, 'SOMA': SOMA, 'MULT': MULT,
              'DIV': DIV, 'INVR': INVR, 'NEGA': NEGA, 'CONJ': CONJ, 'DISJ': DISJ,
              'CMME': CMME, 'CMIG': CMIG, 'CMDG': CMDG, 'CMAG': CMAG, 'CMEG': CMEG,
@@ -241,14 +253,54 @@ functions = {'INPP': INPP, 'CRCT': CRCT, 'AMEM': AMEM, 'SOMA': SOMA, 'MULT': MUL
              'ARMZ': ARMZ, 'LEIT': LEIT, 'IMPR': IMPR
              }
 
-
 def get_func(arg):
-    return functions.get(arg[0])
+    return functions.get(arg)
+
+'''
+['INPP']
+['DSVS', 'R00']
+['DSVF', 'R00']
+['AMEM', '2']
+['AMEM', '3']
+['R00:', 'NADA']
+['LEIT']
+['ARMZ', '0,', '0']
+['CRCT', '0']
+'''
 
 
-# func = get_func(mepa[1]) AMEM
-# func(2)
-# print(s) 2
+mepa_iter = iter(mepa)
+
+try:
+
+    while True:
+        i = next(mepa_iter)
+        if i[0][-1] == ':':
+            pass
+        elif i[0] == 'DSVS':
+            mepa_iter = DSVS(i[1])
+        elif i[0] == 'DSVF':
+            k = DSVF(i[1])
+            if k != False:
+                mepa_iter = DSVF(i[1])
+        else:
+            if len(i) == 1:
+                func = get_func(i[0])
+                func()
+            elif len(i) == 2:
+                func = get_func(i[0])
+                func(i[1])
+            elif len(i) == 3:
+                func = get_func(i[0])
+                func(i[1], i[2])
+
+
+except:
+    exit(1)
+
+
+
+
 
 
 
