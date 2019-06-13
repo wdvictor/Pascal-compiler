@@ -1,5 +1,5 @@
 #
-# import sys
+import sys
 #
 # try:
 #     file = open(sys.argv[1] , 'r')
@@ -49,7 +49,6 @@ R02: NADA
      IMPR
      DMEM 5
      PARA
-
 '''
 
 functions = []
@@ -98,12 +97,12 @@ def CRCT(k):
 
 def SOMA():
     global s
-    M[s-1] = M[s-1] + M[s]
+    M[s-1] = int(M[s-1]) + int(M[s])
     s = s-1
 
 def MULT():
     global s
-    M[s-1] = M[s-1] * M[s]
+    M[s-1] = int(M[s-1]) * int(M[s])
     s = s-1
 
 def DIV():
@@ -183,10 +182,10 @@ def CMAG():
 
 def CMEG():
     global s
-    if M[s-1] <= M[s]:
-        M[s] = 1
+    if int(M[s-1]) <= int(M[s]):
+        M[s-1] = 1
     else:
-        M[s] = 0
+        M[s-1] = 0
 
     s = s-1
 
@@ -194,17 +193,20 @@ def CMEG():
 def DSVF(p):
     global s
     if M[s] == 0:
-        if mepa[index][0] == p + ':':
-            return iter(mepa[index: len(mepa)])
-        else:
-            return False
-    s = s+1
+        for index in range(len(mepa)):
+            if mepa[index][0] == p + ':':
+                return iter(mepa[index: len(mepa)])
+    else:
+        return False
+
 
 
 def DSVS(p):
+    global s
     for index in range(len(mepa)):
         if mepa[index][0] == p+':':
             return iter(mepa[index: len(mepa)])
+
 
 
 
@@ -243,7 +245,7 @@ def LEIT():
 
 def IMPR():
     global s
-    print(M[s])
+    print(M[s], end='')
     s = s - 1
 
 functions = {'INPP': INPP, 'CRCT': CRCT, 'AMEM': AMEM, 'SOMA': SOMA, 'MULT': MULT,
@@ -283,6 +285,7 @@ try:
             k = DSVF(i[1])
             if k != False:
                 mepa_iter = DSVF(i[1])
+            s-=1
         else:
             if len(i) == 1:
                 func = get_func(i[0])
@@ -296,7 +299,7 @@ try:
 
 
 except:
-    exit(1)
+    exit('compiler error:', sys.exc_info()[0])
 
 
 
