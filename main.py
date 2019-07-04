@@ -13,10 +13,19 @@ import SyntaxTree
 # code = file.read()
 
 
-code = '''
-program exemplo5 (input, output);
-var n, k      : integer;
-   f1, f2, f3 : integer;
+code = '''program exemplo5 (input, output);
+begin
+   read (n);
+   f1:=0; f2:=1; k:=1;
+   while k<=n do
+   begin
+      f3:=f1+f2;
+      f1:=f2;
+      f2:=f3;
+      k:=k+1
+   end;
+   write (n, f1)
+end.
 '''
 
 code1 = '''
@@ -28,21 +37,6 @@ tokens = LexicalAnalyzer.get_tokens(code)
 
 program = SyntaxTree.program
 
-identifiers = []
-
-
-def lid(token):
-
-    for i in range(len(token)):
-        if token[i][0] == '#' and token[i][-1] == '#':
-            identifiers.append(i)
-            continue
-        elif token[i] == '<,>' and i != 0 and token[i+1][0] == '#' and token[i+1][-1] == '#':
-            continue
-        else:
-            return token[i:len(token)]
-
-
 
 def check(object, token):
     try:
@@ -52,25 +46,35 @@ def check(object, token):
             return 2
         elif object.name == '<lid>':
             return 3
+        elif object.name == '<dv>':
+            return 4
+        elif object.name == '[pdv]':
+            if token[0] == '<var>':
+                return 5
         elif len(object.children) != 0:
             for i in range(len(object.children)):
                 x = check(object.children[i], token)
                 if x == 1:
                     token = token[1:len(token)]
                 elif x == 2:
-                    identifiers.append(token[0])
+                    SyntaxTree.identifiers.append(token[0])
                     token = token[1:len(token)]
                 elif x == 3:
-                    token = lid(token)
+                    token = SyntaxTree.lid(token)
+                elif x == 4:
+                    token = SyntaxTree.pdv(token)
+                elif x == 5:
+                    token = token[1:len(token)] #consome o <var>
+                    token = SyntaxTree.pdv(token)
+
         else:
             print('Error: expected {}'.format(object.name))
-            exit(1)
+            exit(0)
     except IndexError:
         print('Missing arguments {}'.format(object.name))
 
 
-#check function is working from correct tokens, but we need to create a
-#form to raise a problem if the tokens are wrong
+
 
 
 check(program, tokens)

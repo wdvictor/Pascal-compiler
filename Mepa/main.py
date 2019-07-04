@@ -1,83 +1,28 @@
-#
+
+
 import sys
-#
-# try:
-#     file = open(sys.argv[1] , 'r')
-# except:
-#     print('File not found')
-#     exit(1)
-#
-# code = file.read()
-#
+file = open(sys.argv[1], 'r')
 
-#An example of mepa code. Using to avoid loading archive every time
-code ='''INPP
-     AMEM 2
-     AMEM 3
-     DSVS R00
-R00: NADA 
-     LEIT
-     ARMZ 0, 0
-     CRCT 0
-     ARMZ 0, 2
-     CRCT 1
-     ARMZ 0, 3
-     CRCT 1
-     ARMZ 0, 1
-R01: NADA 
-     CRVL 0, 1
-     CRVL 0, 0
-     CMEG
-     DSVF R02
-     CRVL 0, 2
-     CRVL 0, 3
-     SOMA
-     ARMZ 0, 4
-     CRVL 0, 3
-     ARMZ 0, 2
-     CRVL 0, 4
-     ARMZ 0, 3
-     CRVL 0, 1
-     CRCT 1
-     SOMA
-     ARMZ 0, 1
-     DSVS R01
-R02: NADA 
-     CRVL 0, 0
-     IMPR
-     CRVL 0, 2
-     IMPR
-     DMEM 5
-     PARA
-'''
+code = file.read()
 
-functions = []
-label = ''
-for i in code:
-    if i == ' ':
-        if label == '':
-            pass
-        else:
-            label += i
-    elif i == '\n':
-        functions.append(label)
-        label = ''
-    elif i == ',':
-        pass
-    else:
-        label += i
+code = code.replace(',', '')
 
+code = code.split('\n')
 
 mepa = []
-for i in functions:
-    mepa.append(i.split(' '))
+
+for i in range(len(code)):
+    code[i] = code[i].lstrip()
+
+for i in range(len(code)):
+    mepa.append(code[i].split(' '))
 
 M = []
 D = []
 s = 0
-k = '' # k is the actual function to execute
+line = 0
 
-initial_stack_memory = 1024
+initial_stack_memory = 300
 index = 0
 
 while index <= initial_stack_memory:
@@ -95,20 +40,25 @@ def CRCT(k):
     s += 1
     M[s] = int(k)
 
+
 def SOMA():
     global s
     M[s-1] = int(M[s-1]) + int(M[s])
     s = s-1
+
 
 def MULT():
     global s
     M[s-1] = int(M[s-1]) * int(M[s])
     s = s-1
 
+
 def DIV():
     global s
     M[s-1] = M[s-1]/M[s]
     s = s-1
+
+
 
 def INVR():
     global s
@@ -118,6 +68,7 @@ def INVR():
 def NEGA():
     global s
     M[s] = 1 - M[s]
+
 
 
 def CONJ():
@@ -130,6 +81,7 @@ def CONJ():
     s = s-1
 
 
+
 def DISJ():
     global s
     if M[s-1] == 1 or M[s] == 1:
@@ -138,6 +90,7 @@ def DISJ():
         M[s] = 0
 
     s = s-1
+
 
 
 def CMME():
@@ -160,6 +113,7 @@ def CMIG():
     s = s-1
 
 
+
 def CMDG():
     global s
     if M[s-1] != M[s]:
@@ -168,6 +122,7 @@ def CMDG():
         M[s] = 0
 
     s = s-1
+
 
 
 def CMAG():
@@ -180,6 +135,7 @@ def CMAG():
     s = s -1
 
 
+
 def CMEG():
     global s
     if int(M[s-1]) <= int(M[s]):
@@ -190,11 +146,13 @@ def CMEG():
     s = s-1
 
 
+
 def DSVF(p):
-    global s
+    global s, line
     if M[s] == 0:
         for index in range(len(mepa)):
             if mepa[index][0] == p + ':':
+                line = index
                 return iter(mepa[index: len(mepa)])
     else:
         return False
@@ -202,10 +160,14 @@ def DSVF(p):
 
 
 def DSVS(p):
-    global s
+    global s, line
     for index in range(len(mepa)):
         if mepa[index][0] == p+':':
+            line = index
             return iter(mepa[index: len(mepa)])
+
+    print('Linha {}: RunTime error rotulo {} invalido'.format(line, p))
+    exit(1)
 
 
 
@@ -216,13 +178,16 @@ def NADA():
 
 def AMEM(n):
     global s
-    #put '-2' to say that area is reserved
     s = s+int(n)
 
 
 def DMEM(n):
     global s
     s = s-int(n)
+    if s < -1:
+        print('Linha {}: RunTime error. Stack underflow'.format(line))
+        exit(1)
+
 
 
 def CRVL(m, n):
@@ -245,8 +210,9 @@ def LEIT():
 
 def IMPR():
     global s
-    print(M[s], end='')
+    print(M[s])
     s = s - 1
+
 
 functions = {'INPP': INPP, 'CRCT': CRCT, 'AMEM': AMEM, 'SOMA': SOMA, 'MULT': MULT,
              'DIV': DIV, 'INVR': INVR, 'NEGA': NEGA, 'CONJ': CONJ, 'DISJ': DISJ,
@@ -255,51 +221,42 @@ functions = {'INPP': INPP, 'CRCT': CRCT, 'AMEM': AMEM, 'SOMA': SOMA, 'MULT': MUL
              'ARMZ': ARMZ, 'LEIT': LEIT, 'IMPR': IMPR
              }
 
+
 def get_func(arg):
     return functions.get(arg)
-
-'''
-['INPP']
-['DSVS', 'R00']
-['DSVF', 'R00']
-['AMEM', '2']
-['AMEM', '3']
-['R00:', 'NADA']
-['LEIT']
-['ARMZ', '0,', '0']
-['CRCT', '0']
-'''
 
 
 mepa_iter = iter(mepa)
 
-try:
+while True:
+    line += 1
+    i = next(mepa_iter)
+    if i[0][-1] == ':':
+        pass
+    elif i[0] == 'DSVS':
+        mepa_iter = DSVS(i[1])
+    elif i[0] == 'DSVF':
+        k = DSVF(i[1])
+        if k != False:
+            mepa_iter = k
+        s-=1
+    elif i[0] == 'PARA':
+        import time
 
-    while True:
-        i = next(mepa_iter)
-        if i[0][-1] == ':':
-            pass
-        elif i[0] == 'DSVS':
-            mepa_iter = DSVS(i[1])
-        elif i[0] == 'DSVF':
-            k = DSVF(i[1])
-            if k != False:
-                mepa_iter = DSVF(i[1])
-            s-=1
-        else:
-            if len(i) == 1:
-                func = get_func(i[0])
-                func()
-            elif len(i) == 2:
-                func = get_func(i[0])
-                func(i[1])
-            elif len(i) == 3:
-                func = get_func(i[0])
-                func(i[1], i[2])
+        start_time = time.time()
+        print("--- %s seconds ---" % (time.time() - start_time))
+        exit(1)
+    else:
+        if len(i) == 1:
+            func = get_func(i[0])
+            func()
+        elif len(i) == 2:
+            func = get_func(i[0])
+            func(i[1])
+        elif len(i) == 3:
+            func = get_func(i[0])
+            func(i[1], i[2])
 
-
-except:
-    exit('compiler error:', sys.exc_info()[0])
 
 
 
